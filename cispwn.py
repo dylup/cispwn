@@ -9,6 +9,7 @@ version = 'Version 0.1'
 #ser = serial.Serial('/dev/ttyUSB0') # open serial port
 #print (ser.name) # check which port was really used
 #ser.close() # close
+#test
 def rommon(console):
 	rom=false
 	while rom==false:
@@ -16,12 +17,25 @@ def rommon(console):
 		if "Press RETURN" in prompt:
 			print "Power cycle the router again"
 			time.sleep(5)
-		if "Self decompressing the image" in prompt:
+		else if "Self decompressing the image" in prompt:
 			send_command(console,'\x03')
 			rom=true
 			print "rommon is ready"
+			send_command(console,'confreg 2042')
+			send_command(console,'boot')
+			print "Booting"
 
+def copy_config(console):
+	#tftp the config file
 
+def decrypt_passwords(console):
+	#copy_config() and parse the file for cisco 7 passwords, then crack them and display them in plaintext
+
+def randomize_passwords(console):
+	#copy_config() parse the file for passwords, replace them with random encrypted passwords
+
+def delete_config(console):
+	#delete the startup config file
 
 def read_serial(console):
 	data_bytes=console.inWaiting()
