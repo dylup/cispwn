@@ -4,6 +4,8 @@ import serial
 import sys
 import getopt
 
+version = 'Version 0.1'
+
 #ser = serial.Serial('/dev/ttyUSB0') # open serial port
 #print (ser.name) # check which port was really used
 #ser.close() # close
@@ -35,16 +37,20 @@ def send_command(console,cmd=''):
 
 def main(argv):
 	try:
-		opts, args = getopt.getopt(argv, "hv")
+		opts, args = getopt.getopt(argv, "hV", ['help',
+												'version'])
 	except getopt.GetoptError:
-		print 'Usage: ./cispwn.py'
+		print 'Usage: ./cispwn.py <args>'
 		sys.exit(2)
 	for opt, arg in opts:
-		if opt == '-h' or '-help':
-			print 'Usage: ./cispwn.py'
+		if opt in ('-h', '--help'):
+			print 'Usage: ./cispwn.py\n'
+			print 'Arguments:'
+			print '\t-V or --version\t\tShow version info'
+			print '\t-h or --help\t\tShow this screen'
 			sys.exit()
-		if opt == '-v':
-			print 'cispwn.py Version 0.1'
+		if opt in ('-V', '--version'):
+			print 'cispwn.py ' + version
 			sys.exit()
 	print 'Yay!'
 	#console=serial.Serial(
