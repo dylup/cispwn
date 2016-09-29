@@ -7,6 +7,7 @@ import getopt
 #ser = serial.Serial('/dev/ttyUSB0') # open serial port
 #print (ser.name) # check which port was really used
 #ser.close() # close
+#test
 def rommon(console):
 	rom=false
 	while rom==false:
