@@ -10,17 +10,21 @@ version = 'Version 0.1'
 #print (ser.name) # check which port was really used
 #ser.close() # close
 #test
+#Upon power cycling, loops the command until the router boots with a blank config.
 def rommon(console):
 	rom=false
 	while rom==false:
 		prompt=read_serial(console)
+		#Checks if the config has already been loaded
 		if "Press RETURN" in prompt:
 			print "Power cycle the router again"
 			time.sleep(5)
+		#Sends the Ctrl+C to stop the boot and enter rommon
 		elif "Self decompressing the image" in prompt:
 			send_command(console,'\x03')
 			rom=true
 			print "rommon is ready"
+		#Boots the router in recovery mode
 			send_command(console,'confreg 2042')
 			send_command(console,'boot')
 			print "Booting"
@@ -42,6 +46,7 @@ def rommon(console):
 
 
 def read_serial(console):
+	#Checks to see if there are bytes waiting to be read, and reads them. If no bytes are found, it returns a null string.
 	data_bytes=console.inWaiting()
 	if data_bytes:
 		return console.read(data_bytes)
@@ -49,6 +54,7 @@ def read_serial(console):
 		return ""
 
 def send_command(console,cmd=''):
+	#Sends a command to the router and returns the bytes in waiting as output.
 	console.write(cmd+'\r\n')
 	time.sleep(1)
 	return read_serial(console)
