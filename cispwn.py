@@ -5,8 +5,8 @@ import sys
 import getopt
 
 version = 'Version 0.1'
-tftp=0
-copied=0
+tftp = 0
+copied = 0
 
 #ser = serial.Serial('/dev/ttyUSB0') # open serial port
 #print (ser.name) # check which port was really used
@@ -14,9 +14,9 @@ copied=0
 #test
 #Upon power cycling, loops the command until the router boots with a blank config. It then enables higher priviledges for further commands to be run.
 def rommon(console):
-	rom=false
-	while rom==false:
-		prompt=read_serial(console)
+	rom = false
+	while rom == false:
+		prompt = read_serial(console)
 		#Checks if the config has already been loaded
 		if "Press RETURN" in prompt:
 			print "Power cycle the router again. This script will wait for 10 seconds and loop again."
@@ -24,7 +24,7 @@ def rommon(console):
 		#Sends the Ctrl+C to stop the boot and enter rommon
 		elif "Self decompressing the image" in prompt:
 			send_command(console,'\x03')
-			rom=true
+			rom = true
 			print "rommon is ready"
 		#Boots the router in recovery mode
 			send_command(console,'confreg 2042')
@@ -39,7 +39,7 @@ def rommon(console):
 def tftp_setup(console):
 	send_command(console,'config t')
 	send_command(console,'do show ip int brief')
-	prompt=read_serial(console)
+	prompt = read_serial(console)
 	#Checks whether a Gigabit interface is available, if not, it defaults to the first FastEthernet interface.
 	print "Setting interface options"
 	if "GigabitEthernet0/0" in prompt:
@@ -51,27 +51,27 @@ def tftp_setup(console):
 	send_command(console,'\x03')
 	send_command(console,'')
 	print "Interface options set"
-	tftp=1
+	tftp = 1
 
 
 def copy_config(console):
 	#tftp the config file to the host machine for further commands
-	if(tftp==0):
+	if tftp == 0:
 		tftp_setup(console)
 	send_command(console,'copy startup-config tftp:')
 	send_command(console,'192.168.1.2')
 	send_command(console,'')
-	copied=1
+	copied = 1
 
 
 def decrypt_passwords(console):
-	if(copied==0):
+	if copied == 0:
 		copy_config() 
 		#and parse the file for cisco 7 passwords, then crack them and display them in plaintext
 
 
 def randomize_passwords(console):
-	if(copied==0):
+	if copied == 0:
 		copy_config()
 		#parse the file for passwords, replace them with random encrypted passwords
 
@@ -82,7 +82,7 @@ def randomize_passwords(console):
 
 def read_serial(console):
 	#Checks to see if there are bytes waiting to be read, and reads them. If no bytes are found, it returns a null string.
-	data_bytes=console.inWaiting()
+	data_bytes = console.inWaiting()
 	if data_bytes:
 		return console.read(data_bytes)
 	else:
