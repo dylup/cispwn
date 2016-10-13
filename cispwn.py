@@ -7,6 +7,9 @@ import getopt
 version = 'Version 0.1'
 tftp = 0
 copied = 0
+asa = 0
+router = 0
+switch = 0
 
 #ser = serial.Serial('/dev/ttyUSB0') # open serial port
 #print (ser.name) # check which port was really used
@@ -14,26 +17,79 @@ copied = 0
 #test
 #Upon power cycling, loops the command until the router boots with a blank config. It then enables higher priviledges for further commands to be run.
 def rommon(console):
-	rom = false
-	while rom == false:
+	select = False
+	print "Attempting to identify device type"
+	while select == False:
+		prompt = read_serial(console)
+		if "Self decompressing the image" in prompt:
+			router = 1
+			select = True
+		elif "Use break or ESC to interupt boot" in prompt or "Launching BootLoader" in prompt:
+			asa = 1
+			select = True
+		elif "Loading flash:/" in prompt:
+			switch = 1
+			select = True
+		else:
+			print "Error, a type could not be identified. This script will wait for 5 seconds and loop again."
+	rom = False
+	while rom == False:
 		prompt = read_serial(console)
 		#Checks if the config has already been loaded
-		if "Press RETURN" in prompt:
-			print "Power cycle the router again. This script will wait for 10 seconds and loop again."
-			time.sleep(10)
-		#Sends the Ctrl+C to stop the boot and enter rommon
-		elif "Self decompressing the image" in prompt:
-			send_command(console,'\x03')
-			rom = true
-			print "rommon is ready"
+		if router = 1:
+			if "Press RETURN" in prompt:
+				print "Power cycle the router again. This script will wait for 10 seconds and loop again."
+				time.sleep(10)
+			#Sends the Ctrl+C to stop the boot and enter rommon
+			elif "Self decompressing the image" in prompt:
+				send_command(console,'\x03')
+				rom = true
+				print "rommon is ready"
+			elif "Continue with configuration dialog" in prompt:
+				print "Error: The router does not have a saved config"
+				sys.exit()
 		#Boots the router in recovery mode
-			send_command(console,'confreg 2042')
-			send_command(console,'boot')
-			print "Booting"
-			time.sleep(20)
-			send_command(console,'no')
-			send_command(console,'')
-			send_command(console,'enable')
+				send_command(console,'confreg 2042')
+				send_command(console,'boot')
+				print "Booting"
+				time.sleep(30)
+				send_command(console,'no')
+				send_command(console,'')
+				send_command(console,'enable')
+		elif asa = 1:
+			if "Reading from flash" in prompt or "Launching bootloader" in prompt:
+				print "Power cycle the ASA again. This script will wait for 10 seconds and loop again."
+				time.sleep(10)
+			elif "Boot in 9 seconds" in prompt:
+				send_command(console,'\x0B')
+				rom = true
+				print "rommon is ready"
+				send_command(console,'confreg 0x41')
+				time.sleep(10)
+				send_command(console,'confreg')
+				send_command(console,'y')
+				send_command(console,'')
+				send_command(console,'')
+				send_command(console,'')
+				send_command(console,'')
+				send_command(console,'y')
+				send_command(console,'')
+				send_command(console,'')
+				send_command(console,'')
+				time.sleep(10)
+				send_command(console,'boot')
+				print "Booting"
+				time.sleep(30)
+				send_command(console,'enable')
+				send_command(console,'')
+
+		elif switch = 1:
+			print "The switch must be manually reset by hand. Look online for instructions for your specific switch model. This script will loop until it detects the recovery mode"
+			recovery = 0
+			while (recovery == 0)
+				#if statement for switch prompt goes here
+
+
 
 #sets IP settings of the router's interface
 def tftp_setup(console):
