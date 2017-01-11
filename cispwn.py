@@ -186,6 +186,7 @@ def tftp_setup(console):
 		send_command(console, cmd = 'exit')
 		send_command(console, cmd = '')
 		subprocess.check_call(['ping','-c3','192.168.1.1'])
+		time.sleep(5)
 		print "Interface options set"
 		tftp = 1
 
@@ -328,8 +329,14 @@ def delete_config(console):
 		send_command(console, cmd = '')
 		print "config was deleted"
 
-#def brick_router(console):
-	#deletes every system image on the router, requires external image to get it working again.
+def ip_check():
+	return ""
+
+def console_grab():
+	return ""
+
+#def brick_device(console):
+	#deletes every system image on the device, requires external image to get it working again.
 
 def read_serial(console):
 	#Checks to see if there are bytes waiting to be read, and reads them. If no bytes are found, it returns a null string.
@@ -342,7 +349,7 @@ def read_serial(console):
 def send_command(console,cmd = ''):
 	#Sends a command to the router and returns the bytes in waiting as output.
 	console.write(cmd+'\n')
-	time.sleep(3)
+	time.sleep(2)
 	print read_serial(console)
 
 def main(argv):
@@ -362,6 +369,7 @@ def main(argv):
 		if opt in ('-V', '--version'):
 			print 'cispwn.py ' + version
 			sys.exit()
+	#grab specific usb port based on dev script
 	console=serial.Serial(
 			port = '/dev/ttyUSB0',
 			baudrate = 9600,
@@ -373,6 +381,8 @@ def main(argv):
 	if not console.isOpen():
 		print 'Error, a connection could not be made'
 		sys.exit()
+	#check if IP address/subnet mask match using netifaces, if not, exit the program
+
 	#Function for entering rommon goes here
 	rommon(console)
 	copy_config(console)
