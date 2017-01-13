@@ -382,7 +382,9 @@ def main(argv):
 		print 'Error, a connection could not be made'
 		sys.exit()
 	#check if IP address/subnet mask match using netifaces, if not, exit the program
-
+	if not "'netmask': '255.255.255.0', 'addr': '192.168.1.2'" in netifaces.ifaddresses('eth0'):
+		print 'Error, your network interface settings are incorrect'
+		sys.exit()
 	#Function for entering rommon goes here
 	rommon(console)
 	copy_config(console)
