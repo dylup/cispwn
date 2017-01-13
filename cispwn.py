@@ -17,6 +17,8 @@ passwords = 0
 password = []
 interface = []
 password_list = []
+ip_submask = subprocess.check_output("ifconfig")
+router = subprocess.check_output(['route', '-n'])
 #ser = serial.Serial('/dev/ttyUSB0') # open serial port
 #print (ser.name) # check which port was really used
 #ser.close() # close
@@ -353,6 +355,8 @@ def send_command(console,cmd = ''):
 	print read_serial(console)
 
 def main(argv):
+	global ip_submask
+	global router
 	try:
 		opts, args = getopt.getopt(argv, "hV", ['help',
 												'version'])
@@ -369,8 +373,9 @@ def main(argv):
 		if opt in ('-V', '--version'):
 			print 'cispwn.py ' + version
 			sys.exit()
+
 	#grab specific usb port based on dev script
-	console=serial.Serial(
+	'''console=serial.Serial(
 			port = '/dev/ttyUSB0',
 			baudrate = 9600,
 			parity = "N",
@@ -380,9 +385,9 @@ def main(argv):
 		)
 	if not console.isOpen():
 		print 'Error, a connection could not be made'
-		sys.exit()
+		sys.exit()'''
 	#check if IP address/subnet mask match using netifaces, if not, exit the program
-	if not "'netmask': '255.255.255.0', 'addr': '192.168.1.2'" in netifaces.ifaddresses('eth0'):
+	if not "inet addr:192.168.1.2" in ip_submask or not "Mask:255.255.255.0" in ip_submask or not "0.0.0.0         192.168.1.1" in router:
 		print 'Error, your network interface settings are incorrect'
 		sys.exit()
 	#Function for entering rommon goes here
