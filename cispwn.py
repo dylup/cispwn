@@ -332,8 +332,11 @@ def delete_config(console):
 		print "config was deleted"
 
 def ip_check():
-	return ""
-
+	global ip_submask
+	global router
+	if not "inet addr:192.168.1.2" in ip_submask or not "Mask:255.255.255.0" in ip_submask or not "0.0.0.0         192.168.1.1" in router:
+		print 'Error, your network interface settings are incorrect'
+		sys.exit()
 def console_grab():
 	return ""
 
@@ -355,8 +358,6 @@ def send_command(console,cmd = ''):
 	print read_serial(console)
 
 def main(argv):
-	global ip_submask
-	global router
 	try:
 		opts, args = getopt.getopt(argv, "hV", ['help',
 												'version'])
@@ -387,9 +388,7 @@ def main(argv):
 		print 'Error, a connection could not be made'
 		sys.exit()'''
 	#check if IP address/subnet mask match using netifaces, if not, exit the program
-	if not "inet addr:192.168.1.2" in ip_submask or not "Mask:255.255.255.0" in ip_submask or not "0.0.0.0         192.168.1.1" in router:
-		print 'Error, your network interface settings are incorrect'
-		sys.exit()
+	ip_check()
 	#Function for entering rommon goes here
 	rommon(console)
 	copy_config(console)
